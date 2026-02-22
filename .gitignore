@@ -1,0 +1,23 @@
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Environment
+.env
+.venv
+env/
+venv/
+ENV/
+
+# Data
+data/docs/*
+data/index/*
+
+# Ignore the actual FAISS and JSON database
+*.faiss
+chunk_store.json
+index_state.json
+
+# IDEs
+.vscode/
+.idea/

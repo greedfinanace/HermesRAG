@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advance Offline RAG Research</title>
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --primary-hover: #4338ca;
+            --bg: #0f172a;
+            --surface: #1e293b;
+            --surface-hover: #273549;
+            --text: #f8fafc;
+            --text-muted: #94a3b8;
+            --border: #334155;
+            --success: #10b981;
+            --error: #ef4444;
+            --accent-1: #3b82f6;
+            /* Blue for Claim */
+            --accent-2: #10b981;
+            /* Green for Evidence */
+            --accent-3: #f59e0b;
+            /* Orange for Methodology */
+            --accent-4: #8b5cf6;
+            /* Purple for References */
+        }
+
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+            margin: 0;
+            padding: 2rem;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 3rem;
+            animation: fadeIn 0.5s ease;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            background: linear-gradient(to right, #818cf8, #c084fc);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 0.5rem;
+        }
+
+        .subtitle {
+            color: var(--text-muted);
+            font-size: 1.1rem;
+        }
+
+        .card {
+            background-color: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        h2 {
+            font-size: 1.5rem;
+            margin-top: 0;
+            margin-bottom: 1.5rem;
+            color: var(--text);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        .file-upload-label {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            padding: 2rem;
+            border: 2px dashed var(--border);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            color: var(--text-muted);
+            box-sizing: border-box;
+        }
+
+        .file-upload-label:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+            background-color: rgba(79, 70, 229, 0.05);
+        }
+
+        .supported-types {
+            font-size: 0.85rem;
+            margin-top: 0.5rem;
+            opacity: 0.7;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 1rem;
+            background-color: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text);
+            font-size: 1rem;
+            box-sizing: border-box;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        input[type="text"]:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.2);
+        }
+
+        button {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            font-size: 1rem;
+            font-weight: 600;
+            border-radius: 8px;
+            cursor: pointer;
+            width: 100%;
+            transition: background-color 0.2s ease, transform 0.1s ease;
+        }
+
+        button:hover {
+            background-color: var(--primary-hover);
+        }
+
+        button:active {
+            transform: scale(0.98);
+        }
+
+        .status-message {
+            margin-top: 1rem;
+            padding: 1rem;
+            border-radius: 8px;
+            display: none;
+            font-weight: 500;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .status-success {
+            background-color: rgba(16, 185, 129, 0.1);
+            color: var(--success);
+            border: 1px solid rgba(16, 185, 129, 0.2);
+        }
+
+        .status-error {
+            background-color: rgba(239, 68, 68, 0.1);
+            color: var(--error);
+            border: 1px solid rgba(239, 68, 68, 0.2);
+        }
+
+        /* Structured Output Styling */
+        #queryResponse {
+            display: none;
+            margin-top: 2rem;
+            animation: fadeIn 0.4s ease;
+        }
+
+        .loading-container {
+            display: none;
+            align-items: center;
+            justify-content: center;
+            gap: 1rem;
+            padding: 2rem;
+            background: var(--surface);
+            border-radius: 8px;
+            margin-top: 2rem;
+            border: 1px solid var(--border);
+        }
+
+        .structured-section {
+            background-color: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            border-left: 4px solid var(--border);
+        }
+
+        .sec-claim {
+            border-left-color: var(--accent-1);
+        }
+
+        .sec-evidence {
+            border-left-color: var(--accent-2);
+        }
+
+        .sec-method {
+            border-left-color: var(--accent-3);
+        }
+
+        .sec-refs {
+            border-left-color: var(--accent-4);
+        }
+
+        .section-title {
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            font-weight: 700;
+            margin-bottom: 0.75rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .sec-claim .section-title {
+            color: var(--accent-1);
+        }
+
+        .sec-evidence .section-title {
+            color: var(--accent-2);
+        }
+
+        .sec-method .section-title {
+            color: var(--accent-3);
+        }
+
+        .sec-refs .section-title {
+            color: var(--accent-4);
+        }
+
+        .section-content {
+            white-space: pre-wrap;
+            color: var(--text);
+            font-size: 1rem;
+        }
+
+        .spinner {
+            width: 24px;
+            height: 24px;
+            border: 3px solid rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            border-top-color: var(--primary);
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* Icons */
+        .icon {
+            width: 18px;
+            height: 18px;
+            fill: none;
+            stroke: currentColor;
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Research Paper Analyzer</h1>
+            <div class="subtitle">Deep structured insights powered by local AI</div>
+        </div>
+
+        <div class="card">
+            <h2>
+                <svg class="icon" viewBox="0 0 24 24">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                    <polyline points="17 8 12 3 7 8" />
+                    <line x1="12" y1="3" x2="12" y2="15" />
+                </svg>
+                Ingest Documents
+            </h2>
+            <form id="uploadForm">
+                <div class="form-group">
+                    <label class="file-upload-label" id="fileLabel">
+                        <span id="fileNameDisplay">Click or drag to add a file</span>
+                        <span class="supported-types">Supported: .pdf, .docx, .md, .txt, .csv, .json, .html</span>
+                        <input type="file" id="fileInput" name="file" accept=".pdf,.docx,.md,.txt,.csv,.json,.html"
+                            required>
+                    </label>
+                </div>
+                <button type="submit" id="uploadBtn">Upload & Index</button>
+            </form>
+            <div id="uploadStatus" class="status-message"></div>
+        </div>
+
+        <div class="card">
+            <h2>
+                <svg class="icon" viewBox="0 0 24 24">
+                    <circle cx="11" cy="11" r="8" />
+                    <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                </svg>
+                Query Database
+            </h2>
+            <form id="queryForm">
+                <div class="form-group">
+                    <input type="text" id="questionInput" name="question"
+                        placeholder="Ask specific questions about methodologies, claims, or data..." required
+                        autocomplete="off">
+                </div>
+                <button type="submit" id="queryBtn">Extract Structured Insights</button>
+            </form>
+
+            <div id="loadingIndicator" class="loading-container">
+                <div class="spinner"></div>
+                <span>Semantic search and LLM synthesis in progress...</span>
+            </div>
+
+            <div id="queryResponse">
+                <!-- Dynamically populated structured output -->
+            </div>
+            <div id="queryError" class="status-message status-error"></div>
+        </div>
+    </div>
+
+    <script>
+        // Upload Logic
+        const fileInput = document.getElementById('fileInput');
+        const fileLabel = document.getElementById('fileLabel');
+        const fileNameDisplay = document.getElementById('fileNameDisplay');
+        const uploadForm = document.getElementById('uploadForm');
+        const uploadStatus = document.getElementById('uploadStatus');
+
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                fileNameDisplay.textContent = e.target.files[0].name;
+                fileLabel.style.borderColor = 'var(--primary)';
+                fileLabel.style.color = 'var(--text)';
+                // Auto-submit
+                const event = new Event('submit', { cancelable: true });
+                uploadForm.dispatchEvent(event);
+            }
+        });
+
+        // Drag/Drop handling
+        ['dragover', 'dragleave', 'drop'].forEach(eventName => {
+            fileLabel.addEventListener(eventName, preventDefaults, false);
+        });
+        function preventDefaults(e) { e.preventDefault(); e.stopPropagation(); }
+
+        fileLabel.addEventListener('dragover', () => fileLabel.style.backgroundColor = 'rgba(79, 70, 229, 0.05)');
+        fileLabel.addEventListener('dragleave', () => fileLabel.style.backgroundColor = 'transparent');
+        fileLabel.addEventListener('drop', (e) => {
+            fileLabel.style.backgroundColor = 'transparent';
+            if (e.dataTransfer.files.length) {
+                fileInput.files = e.dataTransfer.files;
+                fileNameDisplay.textContent = e.dataTransfer.files[0].name;
+                fileLabel.style.borderColor = 'var(--primary)';
+                fileLabel.style.color = 'var(--text)';
+                // Auto-submit
+                const event = new Event('submit', { cancelable: true });
+                uploadForm.dispatchEvent(event);
+            }
+        });
+
+        uploadForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('uploadBtn');
+            if (!fileInput.files[0]) return;
+
+            btn.disabled = true;
+            btn.innerHTML = '<div class="spinner" style="display:inline-block; width:16px; height:16px; vertical-align:middle; margin-right:8px"></div> Uploading & Indexing...';
+            uploadStatus.style.display = 'none';
+            uploadStatus.className = 'status-message';
+
+            const formData = new FormData();
+            formData.append('file', fileInput.files[0]);
+
+            try {
+                const res = await fetch('/upload/', { method: 'POST', body: formData });
+                const data = await res.json();
+
+                uploadStatus.style.display = 'block';
+                if (res.ok && !data.error) {
+                    uploadStatus.textContent = data.message;
+                    uploadStatus.classList.add('status-success');
+                    setTimeout(() => {
+                        uploadForm.reset();
+                        fileNameDisplay.textContent = "Click or drag to add a file";
+                        fileLabel.style.borderColor = 'var(--border)';
+                        fileLabel.style.color = 'var(--text-muted)';
+                    }, 4000);
+                } else {
+                    uploadStatus.textContent = data.error || "Upload failed.";
+                    uploadStatus.classList.add('status-error');
+                }
+            } catch (err) {
+                uploadStatus.style.display = 'block';
+                uploadStatus.textContent = "Network error. Server might be down.";
+                uploadStatus.classList.add('status-error');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = 'Upload & Index';
+            }
+        });
+
+        // Query Logic
+        const queryForm = document.getElementById('queryForm');
+        const queryResponse = document.getElementById('queryResponse');
+        const queryError = document.getElementById('queryError');
+        const loadingIndicator = document.getElementById('loadingIndicator');
+
+        queryForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('queryBtn');
+            const qInput = document.getElementById('questionInput');
+
+            if (!qInput.value.trim()) return;
+
+            btn.disabled = true;
+            queryResponse.style.display = 'none';
+            queryError.style.display = 'none';
+            loadingIndicator.style.display = 'flex';
+
+            const formData = new FormData();
+            formData.append('question', qInput.value);
+
+            try {
+                const res = await fetch('/query/', { method: 'POST', body: formData });
+                const data = await res.json();
+
+                loadingIndicator.style.display = 'none';
+
+                if (res.ok && !data.error && data.answer) {
+                    // Populate structured sections
+                    const ans = data.answer;
+
+                    // Default string response handling if llm returns raw string instead of dict
+                    if (typeof ans === 'string') {
+                        queryResponse.innerHTML = `
+                            <div class="structured-section sec-claim">
+                                <div class="section-title">Result</div>
+                                <div class="section-content">${escapeHtml(ans)}</div>
+                            </div>
+                        `;
+                    } else {
+                        // Dict handling
+                        queryResponse.innerHTML = `
+                            <div class="structured-section sec-claim">
+                                <div class="section-title">
+                                    <svg class="icon" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                                    Main Claim
+                                </div>
+                                <div class="section-content">${escapeHtml(ans.main_claim || 'N/A')}</div>
+                            </div>
+                            
+                            <div class="structured-section sec-evidence">
+                                <div class="section-title">
+                                    <svg class="icon" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                                    Supporting Evidence
+                                </div>
+                                <div class="section-content">${escapeHtml(ans.supporting_evidence || 'N/A')}</div>
+                            </div>
+                            
+                            <div class="structured-section sec-method">
+                                <div class="section-title">
+                                    <svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                                    Methodology
+                                </div>
+                                <div class="section-content">${escapeHtml(ans.methodology || 'N/A')}</div>
+                            </div>
+                            
+                            <div class="structured-section sec-refs">
+                                <div class="section-title">
+                                    <svg class="icon" viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+                                    Cited References
+                                </div>
+                                <div class="section-content">${escapeHtml(ans.cited_references || 'N/A')}</div>
+                            </div>
+                        `;
+                    }
+                    queryResponse.style.display = 'block';
+
+                } else {
+                    queryError.style.display = 'block';
+                    queryError.textContent = data.error || 'Failed to process request.';
+                }
+            } catch (err) {
+                loadingIndicator.style.display = 'none';
+                queryError.style.display = 'block';
+                queryError.textContent = "Connection error. Make sure FastAPI and Ollama are running.";
+            } finally {
+                btn.disabled = false;
+            }
+        });
+
+        // Basic HTML escaper
+        function escapeHtml(unsafe) {
+            return (unsafe || '').toString()
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+    </script>
+</body>
+
+</html>
